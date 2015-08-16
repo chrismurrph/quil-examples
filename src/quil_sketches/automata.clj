@@ -145,7 +145,7 @@
         ;; Our initial state is a single row of random 0s and 1s
         initial (repeatedly height #(rand-int 2))
         sim (simulation (rule rule-num) initial)
-        ;; We use partition as a sliding wintdow here. Since sim is
+        ;; We use partition as a sliding window here. Since sim is
         ;; an infinite lazy sequence of future rows we use the 3-arity
         ;; version of partition here to create a 2D view of the visible range
         ;; of results. Since this is the 3-arity version of partition, with 1
@@ -171,6 +171,8 @@
               (swap! time-slices (fn [_] (rest @time-slices))))
       :size [(* scale width) (* scale height)])))
 
-(defn -main [rule-num & args]
-  (run-rule (Integer/valueOf rule-num)
-            {:width 100 :height 100 :scale 4}))
+(defn -main [& args])
+
+;(defn -main [rule-num & args]
+;  (run-rule (Integer/valueOf rule-num)
+;            {:width 100 :height 100 :scale 4}))
