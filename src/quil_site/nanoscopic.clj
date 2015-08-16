@@ -152,9 +152,9 @@
 
 (defn update-state [state]
   (-> state
-      (update-in [:ship] auto-rotate)
+      ;(update-in [:ship] auto-rotate)
       (update-in [:ship] wiggle-ship)
-      (update-in [:ship] move-ship)
+      ;(update-in [:ship] move-ship)
       emit-smoke
       (update-in [:smoke] (fn [smokes] (map age-smoke smokes)))
       (update-in [:smoke] remove-old-smokes)
