@@ -1,8 +1,8 @@
-(ns quil-site.nanoscopic
+(ns quil-site.orig-nano
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]))
 
-;; By Erik Svedäng, Nov 2014
+;; By Erik Sved?ng, Nov 2014
 
 (defn pulse [low high rate]
   (let [diff (- high low)
@@ -54,14 +54,14 @@
 (defn random-star []
   (create-star (rand-coord 1000)))
 
-(defn render-smoke-ball [smoke-ball]
-  (let [age (:age smoke-ball)
+(defn render-smoke [smoke]
+  (let [age (:age smoke)
         size (max 0.0 (- 10.0 (* 5.0 age)))
-        [r g b] (:col smoke-ball)]
+        [r g b] (:col smoke)]
     (q/fill r g b 200)
     (q/ellipse 0 0 size size)))
 
-(defn create-smoke-ball [[x y]]
+(defn create-smoke [[x y]]
   {:pos [(+ x (rand-between -3 3))
          (+ y (rand-between -3 3))]
    :dir 0.0
@@ -70,7 +70,7 @@
    :col [(rand-between 150 255)
          (rand-between 100 200)
          (rand-between 0 100)]
-   :render-fn render-smoke-ball})
+   :render-fn render-smoke})
 
 (defn render-planet [planet]
   (let [size (:size planet)
@@ -110,7 +110,7 @@
   (q/rect-mode :center)
   (q/frame-rate 30)
   {:ship (create-ship)
-   :smoke-particles []
+   :smoke []
    :stars (take 3000 (repeatedly random-star))
    :planets (take 50 (repeatedly random-planet))})
 
@@ -134,33 +134,30 @@
   (let [[dx dy] (:drift planet)]
     (update-in planet [:pos] translate-v2 [dx dy])))
 
-;; Calling particles even although max is one
-(defn emit-smoke-particles [state]
+(defn emit-smoke [state]
   (let [speed (-> state :ship :speed)]
     (if (< (rand) (+ 0.2 speed))
       (let [ship-pos (-> state :ship :pos)]
-        (update-in state [:smoke-particles] conj (create-smoke-ball ship-pos))
-        ;(println (str "S/have added a ball, count is " (count (:smoke-particles state))))
-        )
+        (update-in state [:smoke] conj (create-smoke ship-pos)))
       state)))
 
-(defn age-smoke-ball [smoke-ball]
-  (update-in smoke-ball [:age] #(+ % 0.033)))
+(defn age-smoke [smoke]
+  (update-in smoke [:age] #(+ % 0.033)))
 
-(defn old? [smoke-ball]
-  (< 3.0 (:age smoke-ball)))
+(defn old? [smoke]
+  (< 3.0 (:age smoke)))
 
-(defn remove-old-smoke-particles [smoke-particles]
-  (remove old? smoke-particles))
+(defn remove-old-smokes [smokes]
+  (remove old? smokes))
 
 (defn update-state [state]
   (-> state
       (update-in [:ship] auto-rotate)
       (update-in [:ship] wiggle-ship)
       (update-in [:ship] move-ship)
-      emit-smoke-particles
-      (update-in [:smoke-particles] (fn [smoke-particles] (map age-smoke-ball smoke-particles)))
-      (update-in [:smoke-particles] remove-old-smoke-particles)
+      emit-smoke
+      (update-in [:smoke] (fn [smokes] (map age-smoke smokes)))
+      (update-in [:smoke] remove-old-smokes)
       (update-in [:planets] #(map auto-rotate %))
       (update-in [:planets] #(map drift-planet %))))
 
@@ -204,9 +201,9 @@
       (q/pop-matrix))))
 
 (defn draw-state [state]
-  (q/background (pulse 20 40 15.0)
+  (q/background (pulse 20 40  15.0)
                 (pulse 40 60 40.0)
-                (pulse 50 70  5.0))
+                (pulse 50 70 5.0))
   (q/no-stroke)
   (let [ship-pos (-> state :ship :pos)
         cam-pos (translate-v2 ship-pos [(- (/ (q/width) 2))
@@ -215,11 +212,11 @@
       (draw-entity star cam-pos))
     (doseq [planet (:planets state)]
       (draw-entity planet cam-pos))
-    (doseq [smoke (:smoke-particles state)]
+    (doseq [smoke (:smoke state)]
       (draw-entity smoke cam-pos))
     (draw-entity (:ship state) cam-pos)))
 
-(q/defsketch nanoscopic
+(q/defsketch orig-nano
              :host "canvas"
              :size [500 500]
              :setup setup
