@@ -1,10 +1,7 @@
 (ns quil-site.flow-gases
   (:require [quil.middleware :as m]
-            [quil.core :as q]))
-
-(defn rand-between [low high]
-  (let [diff (- high low)]
-    (+ low (rand diff))))
+            [quil.core :as q]
+            [quil-site.maths-utils :as u]))
 
 (defn pulse [low high rate]
   (let [diff (- high low)
@@ -36,58 +33,40 @@
 (defn x-val [vec] (first vec))
 (defn y-val [vec] (second vec))
 
-(def hatchery-size 25)
+(defn random-colour
+  []
+  [(u/random-float 150 255) (u/random-float 100 200) (u/random-float 0 100)])
 
-(defn vector->radians
-  [[x y]]
-  (. Math (atan2 y x)))
-
-(defn translate-v2
-  ([[x y] [dx dy]] (translate-v2 [x y] [dx dy] +))
-  ([[x y] [dx dy] op] [(op x dx) (op y dy)]))
-
-(defn abs
-  [[x y]] [(max x (- x)) (max y (- y))])
-
-(defn calc-direction [from-zero-vec]
-  (let [delta (translate-v2 [0 0] from-zero-vec +)
-        dir (vector->radians delta)]
-    ;(println (str "Centre is " centre ", and vec is " vec ", so delta is " delta))
-    dir))
+;; Future enhancement is for right at start there to be much bigger hatchery area and many more created
+;; This way user won't be distracted by seeing them spread to the outside
+(def hatchery-size 15)
 
 ;; If one every fps is too much we can be random
 ;; If need more then we won't use conj but concat(?), and return a vector here
 (defn create-molecule-ball []
-  (let [x-random (rand-between (- hatchery-size) hatchery-size)
-        y-random (rand-between (- hatchery-size) hatchery-size)
-        dir (calc-direction [x-random y-random])
+  (let [x-random (u/random-float (- hatchery-size) hatchery-size)
+        y-random (u/random-float (- hatchery-size) hatchery-size)
+        dir (u/calc-direction [x-random y-random])
         pos [(+ (x-val centre) x-random)
              (+ (y-val centre) y-random)]]
     {:pos pos
      :dir dir
      :z 1.0
-     :col [(rand-between 150 255)
-           (rand-between 100 200)
-           (rand-between 0 100)]
+     :col (random-colour)
      :speed 0.1
      :render-fn render-molecule-ball}))
 
-;; Calling particles even although max is one
+;; Named 'particles' even although currently one-only created
 (defn emit-molecule-particles [state]
   (update-in state [:molecule-particles] conj (create-molecule-ball))
   ;(println (str "S/have added a ball, count is " (count (:molecule-particles state))))
   )
 
-(defn radians->vector
-  [angle constant]
-  [(* constant (. Math (cos angle)))
-   (* constant (. Math (sin angle)))])
-
 (defn move-molecule-ball [molecule-ball]
   (let [[x y] (:pos molecule-ball)
         dir (:dir molecule-ball)
-        [delta-x delta-y] (radians->vector dir 0.33)
-        [new-x new-y] (translate-v2 [x y] [delta-x delta-y])]
+        [delta-x delta-y] (u/radians->vector dir 0.33)
+        [new-x new-y] (u/translate-v2 [x y] [delta-x delta-y])]
     ;(do println (new-x) println (new-y))
     (assoc-in molecule-ball [:pos] [new-x new-y])))
 
@@ -98,7 +77,11 @@
       (update-in [:molecule-particles] (fn [molecule-particles] (map move-molecule-ball molecule-particles)))))
 
 (defn on-screen? [x y]
-  true)
+  (let [margin -10
+        res (and (<= (- margin) x (+ margin (q/width)))
+                 (<= (- margin) y (+ margin (q/height))))]
+    ;(when-not res (println "Going off"))
+    res))
 
 (defn draw-entity [entity]
   (let [[x y] (:pos entity)
