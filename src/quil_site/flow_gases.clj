@@ -17,7 +17,7 @@
 (def fps 30)
 
 (defn setup []
-  (println "In setup")
+  ;(println "In setup")
   (q/rect-mode :radius)
   (q/frame-rate fps)
   {:molecule-particles []
@@ -51,10 +51,19 @@
   ;(println (str "S/have added a ball, count is " (count (:molecule-particles state))))
   )
 
+(defn translate-v2 [[x y] [dx dy]]
+  [(+ x dx) (+ y dy)])
+
+(defn radians->vector
+  [angle constant]
+  [(* constant (. Math (cos angle)))
+   (* constant (. Math (sin angle)))])
+
 (defn move-molecule-ball [molecule-ball]
   (let [[x y] (:pos molecule-ball)
-        new-x (+ x 0.033)
-        new-y (+ y 0.033)]
+        dir (:dir molecule-ball)
+        [delta-x delta-y] (radians->vector dir 0.33)
+        [new-x new-y] (translate-v2 [x y] [delta-x delta-y])]
     ;(do println (new-x) println (new-y))
     (assoc-in molecule-ball [:pos] [new-x new-y])))
 
@@ -75,7 +84,6 @@
         screen-x x
         screen-y y]
     (when (on-screen? screen-x screen-y)
-      (println (str "In draw-entity at " screen-x screen-y) )
       (q/push-matrix)
       (q/translate screen-x screen-y)
       (q/rotate dir)
@@ -84,12 +92,12 @@
       )))
 
 (defn draw-state [state]
-  (println "In draw-state")
+  ;(println "In draw-state")
   (q/background (pulse 20 40 15.0)
                 (pulse 40 60 40.0)
                 (pulse 50 70  5.0))
   (q/no-stroke)
-  (println (str "molecule-particles count " (count (:molecule-particles state))))
+  ;(println (str "molecule-particles count " (count (:molecule-particles state))))
   (doseq [molecule (:molecule-particles state)]
     (draw-entity molecule)))
 
